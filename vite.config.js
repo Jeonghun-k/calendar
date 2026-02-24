@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig(({ mode }) => {
-  const basePath = mode === 'production' ? '/calendar/' : '/'
+  const basePath = mode === 'production' ? './' : '/'
 
   return {
   plugins: [
@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => {
         theme_color: '#f8f8fb',
         background_color: '#f8f8fb',
         display: 'standalone',
-        start_url: basePath,
-        scope: basePath,
+        start_url: './',
+        scope: './',
         icons: [
           {
             src: 'pwa-192x192.svg',
