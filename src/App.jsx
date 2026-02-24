@@ -511,8 +511,10 @@ export default function App() {
           )
           scroller.scrollTo({ top: targetTop, behavior: 'auto' })
           setActiveMonthKey(todayMonthKey)
-          setHasInitialFocus(true)
-          isForcingTodayRef.current = false
+          requestAnimationFrame(() => {
+            setHasInitialFocus(true)
+            isForcingTodayRef.current = false
+          })
           return
         }
 
