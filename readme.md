@@ -32,6 +32,12 @@ npm run build
 ## GitHub Pages 배포 기준
 - Vite `base`는 프로덕션에서 `/Calander-antigravity/`로 설정되어 있습니다.
 - 저장소 이름이 바뀌면 `vite.config.js`의 `base` 값을 함께 수정해야 합니다.
+- GitHub Actions로 배포할 경우 `Settings > Secrets and variables > Actions`에 아래 시크릿을 등록해야 Supabase 동기화가 동작합니다.
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+  - `VITE_HOLIDAY_PROXY_ENDPOINT` (선택)
+  - `VITE_SHARED_ACCOUNT_EMAIL` (선택)
+  - `VITE_SHARED_ACCOUNT_PASSWORD` (선택)
 
 ## Phase 2 (Supabase) 시작
 - 단계별 가이드: `docs/phase2-supabase-setup.md`
