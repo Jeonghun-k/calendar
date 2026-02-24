@@ -65,8 +65,6 @@ const FALLBACK_HOLIDAYS = {
 
 const HOLIDAY_PROXY_ENDPOINT = import.meta.env.VITE_HOLIDAY_PROXY_ENDPOINT?.trim() || ''
 
-const SHARED_ACCOUNT_EMAIL = import.meta.env.VITE_SHARED_ACCOUNT_EMAIL?.trim() || ''
-const SHARED_ACCOUNT_PASSWORD = import.meta.env.VITE_SHARED_ACCOUNT_PASSWORD?.trim() || ''
 const EVENTS_STORAGE_KEY = 'calendar.events.v1'
 
 const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -273,6 +271,10 @@ export default function App() {
   const [editingSourceDateKey, setEditingSourceDateKey] = useState(todayKey)
   const [toastMessage, setToastMessage] = useState('')
   const [isSupabaseLinked, setIsSupabaseLinked] = useState(false)
+  const [authStatus, setAuthStatus] = useState(supabase ? 'checking' : 'local')
+  const [authDraft, setAuthDraft] = useState({ email: '', password: '' })
+  const [authErrorMessage, setAuthErrorMessage] = useState('')
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false)
   const [hasInitialFocus, setHasInitialFocus] = useState(false)
   const [todayFocusToken, setTodayFocusToken] = useState(0)
 
@@ -375,44 +377,64 @@ export default function App() {
   }, [eventsByDate])
 
   useEffect(() => {
-    let isUnmounted = false
-    let channel = null
+    if (!supabase) {
+      setAuthStatus('local')
+      setIsSupabaseLinked(false)
+      isSupabaseReadyRef.current = false
+      return
+    }
 
-    const bootstrapSupabase = async () => {
-      if (!supabase) {
+    let isUnmounted = false
+    const applySession = (session) => {
+      if (isUnmounted) {
         return
       }
 
+      const isAuthenticated = Boolean(session)
+      setAuthStatus(isAuthenticated ? 'authenticated' : 'unauthenticated')
+      setIsSupabaseLinked(isAuthenticated)
+      isSupabaseReadyRef.current = isAuthenticated
+      if (!isAuthenticated) {
+        setAuthErrorMessage('')
+      }
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        applySession(data.session)
+      })
+      .catch((error) => {
+        console.error('Supabase 세션 확인 실패', error)
+        applySession(null)
+      })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session)
+    })
+
+    return () => {
+      isUnmounted = true
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!supabase || authStatus !== 'authenticated') {
+      return
+    }
+
+    let isUnmounted = false
+    let channel = null
+
+    const bindRealtime = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        let activeSession = session
-
-        if (!activeSession && SHARED_ACCOUNT_EMAIL && SHARED_ACCOUNT_PASSWORD) {
-          const signInResult = await supabase.auth.signInWithPassword({
-            email: SHARED_ACCOUNT_EMAIL,
-            password: SHARED_ACCOUNT_PASSWORD,
-          })
-          if (signInResult.error) {
-            throw signInResult.error
-          }
-          activeSession = signInResult.data.session
-        }
-
-        if (!activeSession) {
-          console.warn('Supabase 세션이 없어 로컬 저장소 모드로 동작합니다.')
-          return
-        }
-
+        await loadEventsFromSupabase()
         if (isUnmounted) {
           return
         }
-
-        isSupabaseReadyRef.current = true
-        setIsSupabaseLinked(true)
-        await loadEventsFromSupabase()
 
         channel = supabase
           .channel('events-changes')
@@ -423,13 +445,11 @@ export default function App() {
           })
           .subscribe()
       } catch (error) {
-        console.error('Supabase 연동 실패. 로컬 저장소 모드로 유지합니다.', error)
-        isSupabaseReadyRef.current = false
-        setIsSupabaseLinked(false)
+        console.error('Supabase 연동 실패', error)
       }
     }
 
-    bootstrapSupabase()
+    bindRealtime()
 
     return () => {
       isUnmounted = true
@@ -437,7 +457,7 @@ export default function App() {
         supabase.removeChannel(channel)
       }
     }
-  }, [loadEventsFromSupabase])
+  }, [authStatus, loadEventsFromSupabase])
 
   useEffect(() => {
     requestTodayFocus()
@@ -720,6 +740,35 @@ export default function App() {
     }))
   }
 
+  const handleAuthDraftChange = (event) => {
+    const { name, value } = event.target
+    setAuthDraft((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault()
+    if (!supabase || isAuthSubmitting) {
+      return
+    }
+
+    setIsAuthSubmitting(true)
+    setAuthErrorMessage('')
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authDraft.email.trim(),
+      password: authDraft.password,
+    })
+
+    if (error) {
+      setAuthErrorMessage('로그인에 실패했어요. 이메일/비밀번호를 확인해주세요.')
+    } else {
+      setAuthDraft((prev) => ({ ...prev, password: '' }))
+    }
+    setIsAuthSubmitting(false)
+  }
+
   const handleAddSubmit = async (event) => {
     event.preventDefault()
 
@@ -844,6 +893,56 @@ export default function App() {
       backgroundColor: color.bg,
       color: color.fg,
     }
+  }
+
+  if (authStatus === 'checking') {
+    return (
+      <main className="calendar-app auth-screen" aria-label="로그인 상태 확인">
+        <section className="auth-card">
+          <h1>세션 확인 중</h1>
+          <p>잠시만 기다려주세요.</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (authStatus === 'unauthenticated') {
+    return (
+      <main className="calendar-app auth-screen" aria-label="로그인">
+        <section className="auth-card">
+          <h1>공유 캘린더 로그인</h1>
+          <p>가족 공용 계정으로 로그인하세요.</p>
+          <form className="auth-form" onSubmit={handleLoginSubmit}>
+            <label className="field">
+              <span>이메일</span>
+              <input
+                autoComplete="username"
+                name="email"
+                onChange={handleAuthDraftChange}
+                required
+                type="email"
+                value={authDraft.email}
+              />
+            </label>
+            <label className="field">
+              <span>비밀번호</span>
+              <input
+                autoComplete="current-password"
+                name="password"
+                onChange={handleAuthDraftChange}
+                required
+                type="password"
+                value={authDraft.password}
+              />
+            </label>
+            {authErrorMessage ? <p className="auth-error">{authErrorMessage}</p> : null}
+            <button className="auth-submit" disabled={isAuthSubmitting} type="submit">
+              {isAuthSubmitting ? '로그인 중...' : '로그인'}
+            </button>
+          </form>
+        </section>
+      </main>
+    )
   }
 
   return (

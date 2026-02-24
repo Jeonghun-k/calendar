@@ -36,6 +36,56 @@ body {
   overflow: hidden;
 }
 
+.auth-screen {
+  justify-content: center;
+  padding: 20px 16px;
+}
+
+.auth-card {
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: #ffffff;
+  padding: 18px 14px;
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.auth-card p {
+  margin: 8px 0 0;
+  color: #636366;
+  font-size: 14px;
+}
+
+.auth-form {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-error {
+  margin: 0;
+  color: #c61f17;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-submit {
+  border: 0;
+  border-radius: 10px;
+  height: 40px;
+  font-size: 15px;
+  font-weight: 700;
+  background: #007aff;
+  color: #ffffff;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+}
+
 .top-chrome {
   position: sticky;
   top: 0;
