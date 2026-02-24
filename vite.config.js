@@ -2,7 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const basePath = mode === 'production' ? '/calendar/' : '/'
+
+  return {
   plugins: [
     react(),
     VitePWA({
@@ -16,8 +19,8 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#f8f8fb',
         background_color: '#f8f8fb',
         display: 'standalone',
-        start_url: mode === 'production' ? '/Calander-antigravity/' : '/',
-        scope: mode === 'production' ? '/Calander-antigravity/' : '/',
+        start_url: basePath,
+        scope: basePath,
         icons: [
           {
             src: 'pwa-192x192.svg',
@@ -40,5 +43,6 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   // GitHub Pages project site base path
-  base: mode === 'production' ? '/calendar/' : '/',
-}))
+  base: basePath,
+}
+})
