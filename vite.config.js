@@ -40,5 +40,5 @@ export default defineConfig(({ mode }) => ({
     }),
   ],
   // GitHub Pages project site base path
-  base: mode === 'production' ? '/Calander-antigravity/' : '/',
+  base: mode === 'production' ? '/calendar/' : '/',
 }))
