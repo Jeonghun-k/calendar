@@ -284,6 +284,7 @@ export default function App() {
   const pendingMonthAnchorRef = useRef(null)
   const isForcingTodayRef = useRef(false)
   const isSupabaseReadyRef = useRef(false)
+  const isCalendarVisible = authStatus === 'authenticated' || authStatus === 'local'
 
   const requestTodayFocus = () => {
     isForcingTodayRef.current = true
@@ -460,10 +461,17 @@ export default function App() {
   }, [authStatus, loadEventsFromSupabase])
 
   useEffect(() => {
+    if (!isCalendarVisible) {
+      return
+    }
     requestTodayFocus()
-  }, [today, todayKey])
+  }, [today, todayKey, isCalendarVisible])
 
   useEffect(() => {
+    if (!isCalendarVisible) {
+      return
+    }
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         requestTodayFocus()
@@ -474,9 +482,13 @@ export default function App() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [today, todayKey])
+  }, [today, todayKey, isCalendarVisible])
 
   useEffect(() => {
+    if (!isCalendarVisible) {
+      return
+    }
+
     if (todayFocusToken === 0) {
       return
     }
@@ -516,7 +528,7 @@ export default function App() {
     }
 
     tryFocusToday(0)
-  }, [todayFocusToken, today])
+  }, [todayFocusToken, today, isCalendarVisible])
 
   useEffect(() => {
     const scroller = scrollRef.current
