@@ -17,7 +17,8 @@ cp .env.example .env
 
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`: 필수
 - `VITE_HOLIDAY_PROXY_ENDPOINT`: 공휴일 API 프록시 엔드포인트(서버에서 비밀키 보관)
-- `VITE_SHARED_ACCOUNT_EMAIL`, `VITE_SHARED_ACCOUNT_PASSWORD`: 선택 (자동 로그인 사용 시)
+- `VITE_`로 시작하는 값은 프론트 번들에 포함되어 사용자에게 공개됩니다.
+- 이메일/비밀번호/API 비밀키 같은 민감정보는 절대 `VITE_` 변수에 넣지 마세요.
 
 ### 3) 개발 서버 실행
 ```bash
@@ -36,8 +37,6 @@ npm run build
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
   - `VITE_HOLIDAY_PROXY_ENDPOINT` (선택)
-  - `VITE_SHARED_ACCOUNT_EMAIL` (선택)
-  - `VITE_SHARED_ACCOUNT_PASSWORD` (선택)
 
 ## Phase 2 (Supabase) 시작
 - 단계별 가이드: `docs/phase2-supabase-setup.md`

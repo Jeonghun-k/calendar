@@ -35,8 +35,6 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_HOLIDAY_PROXY_ENDPOINT: ${{ secrets.VITE_HOLIDAY_PROXY_ENDPOINT }}
-          VITE_SHARED_ACCOUNT_EMAIL: ${{ secrets.VITE_SHARED_ACCOUNT_EMAIL }}
-          VITE_SHARED_ACCOUNT_PASSWORD: ${{ secrets.VITE_SHARED_ACCOUNT_PASSWORD }}
         run: npm run build
 
       - name: Upload artifact
