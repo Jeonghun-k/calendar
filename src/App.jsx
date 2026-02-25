@@ -500,9 +500,19 @@ export default function App() {
     }
 
     const todayMonthKey = monthKey(today)
+    let isCancelled = false
+    let retryTimer = null
 
-    const tryFocusToday = (attempt = 0) => {
+    const tryFocusToday = () => {
+      if (isCancelled) {
+        return
+      }
+
       requestAnimationFrame(() => {
+        if (isCancelled) {
+          return
+        }
+
         const monthNode = monthRefs.current.get(todayMonthKey)
         if (monthNode) {
           const targetTop = Math.max(
@@ -512,24 +522,27 @@ export default function App() {
           scroller.scrollTo({ top: targetTop, behavior: 'auto' })
           setActiveMonthKey(todayMonthKey)
           requestAnimationFrame(() => {
+            if (isCancelled) {
+              return
+            }
             setHasInitialFocus(true)
             isForcingTodayRef.current = false
           })
           return
         }
 
-        if (attempt < 12) {
-          window.setTimeout(() => {
-            tryFocusToday(attempt + 1)
-          }, 50)
-        } else {
-          setHasInitialFocus(true)
-          isForcingTodayRef.current = false
-        }
+        retryTimer = window.setTimeout(tryFocusToday, 60)
       })
     }
 
-    tryFocusToday(0)
+    tryFocusToday()
+
+    return () => {
+      isCancelled = true
+      if (retryTimer) {
+        window.clearTimeout(retryTimer)
+      }
+    }
   }, [todayFocusToken, today, isCalendarVisible])
 
   useEffect(() => {
@@ -973,9 +986,6 @@ export default function App() {
           </div>
 
           <div className="header-actions">
-            <span className={`sync-badge ${isSupabaseLinked ? 'ok' : 'local'}`}>
-              {isSupabaseLinked ? 'Supabase 연결됨' : '로컬 저장 모드'}
-            </span>
             <button className="top-today-button" onClick={requestTodayFocus} type="button">
               오늘
             </button>
@@ -1037,7 +1047,7 @@ export default function App() {
                         }}
                       >
                         <button
-                          className={`day-number-anchor day-number-button ${isSelectedDate ? 'selected' : ''}`}
+                          className={`day-number-anchor day-number-button ${isSelectedDate && !isToday ? 'selected' : ''}`}
                           onClick={() => openAddSheet(day.key)}
                           type="button"
                         >
